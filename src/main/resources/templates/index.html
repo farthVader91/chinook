@@ -1,0 +1,153 @@
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf8"
+            src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js"></script>
+    <style>
+        td.details-control {
+            background: url('/images/details_open.png') no-repeat center center;
+            cursor: pointer;
+        }
+
+        tr.shown td.details-control {
+            background: url('images/details_close.png') no-repeat center center;
+        }
+    </style>
+</head>
+<body>
+<table id="chinook-table" class="display cell-border">
+</table>
+<script type="text/javascript">
+    function extractData(resp) {
+        if (!resp._embedded) return [resp];
+        return resp._embedded[Object.keys(resp._embedded)[0]];
+    }
+
+    function getRelationships(row) {
+        if (row._links !== undefined) {
+            return Object.keys(row._links)
+                .filter(function (rel) {
+                    return rel !== 'self';
+                })
+                .reduce(function (obj, key) {
+                    obj[key] = row._links[key];
+                    return obj;
+                }, {});
+
+        }
+
+        return null;
+    }
+
+    function transformUrl(apiUrl) {
+        let url = new URL(apiUrl);
+        let path = url.pathname;
+        url.pathname = path.substr(path.indexOf('/', 1));
+
+        return url.toString();
+    }
+
+    function renderRelationships(relationships) {
+        return $.map(relationships, function (obj, rel) {
+            let strippedUrl = transformUrl(obj.href);
+            let readableRel = capitalize(rel);
+            return `<a href="${strippedUrl}">${readableRel}</a>`;
+        });
+    }
+
+    function capitalize(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    function extractColumns(row) {
+        let blackListedColumns = ['_links'];
+        let columns = Object.keys(row);
+        let relationships = getRelationships(row);
+        let dtCols = columns
+            .filter(function (column) {
+                return blackListedColumns.indexOf(column) < 0;
+            })
+            .map(function (column) {
+                return {
+                    title: capitalize(column),
+                    data: (row[column] !== null
+                        && typeof row[column] === "object"
+                        && row[column].name)
+                        ? `${column}.name` : column
+                }
+            });
+        if (relationships && Object.keys(relationships).length > 0) {
+            dtCols.splice(0, 0, {
+                "className": 'details-control',
+                "orderable": false,
+                "data": null,
+                "defaultContent": '<p><u>rels</u></p>'
+            });
+        }
+
+        return dtCols;
+    }
+
+    function renderTable() {
+        let $chinookTable = $('#chinook-table')
+
+        let apiResource = `/api${window.location.pathname}`;
+        // pre-fetch data to get a sense of each row.
+        // this is a workaround for data-table's rigidity with defining/deriving columns on-the-fly.
+        $.ajax({url: apiResource})
+            .done(function (resp) {
+                // now that we have an actual api response for the current resource, proceed to init the data-table.
+                let dataTable = $chinookTable.DataTable({
+                    ordering: false,
+                    searching: false,
+                    serverSide: true,
+                    processing: true,
+                    columns: extractColumns(extractData(resp)[0]),
+                    ajax: function (data, callback, settings) {
+                        $.ajax({
+                            url: apiResource,
+                            data: {
+                                page: Math.round(data.start / data.length),
+                                size: data.length
+                            }
+                        }).done(function (resp) {
+                            callback({
+                                draw: data.draw,
+                                recordsTotal: resp.page ? resp.page.totalElements : 1,
+                                recordsFiltered: resp.page ? resp.page.totalElements : 1,
+                                data: extractData(resp)
+                            });
+                        });
+                    },
+                });
+            });
+    }
+
+    $(document).ready(function () {
+        renderTable();
+
+        // Add event listener for opening and closing details
+        $('#chinook-table').on('click', 'tbody td.details-control', function () {
+            let tr = $(this).closest('tr');
+            let dataTable = $('#chinook-table').DataTable();
+            let row = dataTable.row(tr);
+
+            if (row.child.isShown()) {
+                // This row is already open - close it
+                row.child.hide();
+                tr.removeClass('shown');
+            } else {
+                // Open this row
+                let relationships = getRelationships(row.data());
+                if (relationships && Object.keys(relationships).length > 0) {
+                    row.child(renderRelationships(relationships)).show();
+                }
+                tr.addClass('shown');
+            }
+        });
+
+    });
+</script>
+</body>
+</html>
