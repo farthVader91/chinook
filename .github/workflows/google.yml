@@ -86,4 +86,4 @@ jobs:
         ./kustomize edit set image farthvader/chinook:$DOCKER_TAG
         ./kustomize build . | kubectl apply -f -
         kubectl rollout status deployment/$DEPLOYMENT_NAME
-        kubectl get services -o wide
+        kubectl get services/chinook-svc -o wide
