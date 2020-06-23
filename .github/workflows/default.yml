@@ -1,0 +1,10 @@
+name: Execute a shell command
+
+jobs:
+  my-first-job:
+    name: Motorola
+    runs-on: ubuntu-latest
+    steps:
+      - name: Round 1
+        run: |
+          echo "FIGHT!"
