@@ -1,0 +1,8 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: chinook-ingress
+spec:
+  backend:
+    serviceName: chinook-svc
+    servicePort: 80
