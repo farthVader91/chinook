@@ -33,11 +33,11 @@ jobs:
     - name: Cache Maven Repo
       uses: actions/cache@v2
       with:
-        path: /root/.m2/repository
+        path: .m2/repository
         key: mvn-repo
 
     - name: Build with Maven
-      run: mvn -B package -Dmaven.test.skip=true -Dmaven.repo.local=/root/.m2/repository
+      run: mvn -B package -Dmaven.test.skip=true -Dmaven.repo.local=.m2/repository
 
     # Push the Docker image to Google Container Registry
     - name: Build & Publish
