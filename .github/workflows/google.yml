@@ -52,7 +52,7 @@ jobs:
     # Push the Docker image to Google Container Registry
     - name: Publish
       run: |
-        docker push $REGISTRY_HOSTNAME/farthvader/chinook:$GITHUB_REF
+        docker push $REGISTRY_HOSTNAME/farthvader/chinook:$GITHUB_SHA
 
     # Setup gcloud CLI
     - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
