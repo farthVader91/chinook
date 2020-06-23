@@ -41,14 +41,13 @@ jobs:
         java-version: 1.8
 
     - name: Cache Maven Repo
-      id: cache-mvn-repo
       uses: actions/cache@v2
       with:
-        path: .m2/repository
+        path: ~/.m2/repository/
         key: mvn-repo
 
     - name: Build with Maven
-      run: mvn -B package -Dmaven.test.skip=true -Dmaven.repo.local=./m2/repository
+      run: mvn -B package -Dmaven.test.skip=true -Dmaven.repo.local=~/.m2/repository
 
     # Push the Docker image to Google Container Registry
     - name: Build & Publish
@@ -72,6 +71,9 @@ jobs:
     env:
       DOCKER_TAG: ${{ needs.build-publish.outputs.docker-tag }}
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
     # Setup gcloud CLI
     - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
       with:
@@ -81,14 +83,14 @@ jobs:
 
     # Set up kustomize
     - name: Set up Kustomize
-      working-directory: ./k8s
+      working-directory: k8s
       run: |
         curl -o kustomize --location https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
         chmod u+x ./kustomize
 
     # Deploy the Docker image to the GKE cluster
     - name: Deploy
-      working-directory: ./k8s
+      working-directory: k8s
       run: |
         gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project $GKE_PROJECT
         ./kustomize edit set image farthvader/chinook:$DOCKER_TAG
