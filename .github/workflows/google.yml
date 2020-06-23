@@ -40,8 +40,15 @@ jobs:
       with:
         java-version: 1.8
 
+    - name: Cache Maven Repo
+      id: cache-mvn-repo
+      uses: actions/cache@v2
+      with:
+        path: .m2/repository
+        key: mvn-repo
+
     - name: Build with Maven
-      run: mvn -B package -Dmaven.test.skip=true
+      run: mvn -B package -Dmaven.test.skip=true -Dmaven.repo.local=./m2/repository
 
     # Push the Docker image to Google Container Registry
     - name: Build & Publish
@@ -74,6 +81,7 @@ jobs:
 
     # Set up kustomize
     - name: Set up Kustomize
+      working-directory: ./k8s
       run: |
         curl -o kustomize --location https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64
         chmod u+x ./kustomize
