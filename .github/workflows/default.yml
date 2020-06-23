@@ -1,5 +1,7 @@
 name: Execute a shell command
 
+on: push
+
 jobs:
   my-first-job:
     name: Motorola
