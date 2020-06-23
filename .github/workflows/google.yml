@@ -50,7 +50,7 @@ jobs:
     # Build the Docker image
     - name: Build
       run: |
-        docker build -t farthvader/chinook:"$GITHUB_REF" \
+        docker build -t farthvader/chinook:"$GITHUB_SHA" \
           --build-arg GITHUB_SHA="$GITHUB_SHA" \
           --build-arg GITHUB_REF="$GITHUB_REF" -f docker/Dockerfile .
 
